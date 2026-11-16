@@ -11,6 +11,8 @@ sealed record Session(string Id, SessionState State, Status Status, DateTime Las
 /// </summary>
 static class SessionStore
 {
+    static readonly TimeSpan CompactingTimeout = TimeSpan.FromMinutes(3);
+
     // transcript path -> (last write time, ended with a user interrupt?)
     static readonly Dictionary<string, (DateTime Mtime, bool Interrupted)> InterruptCache = new();
 
@@ -46,6 +48,12 @@ static class SessionStore
                     state = SessionState.Done;
                     try { Directory.Delete(SessionFiles.AgentsDirFor(id), true); } catch { }
                 }
+
+                // Compaction takes seconds. If PreCompact was never followed by PostCompact (aborted/failed compaction),
+                // give up quickly. Measured from the recorded event only: transcript writes (e.g. app metadata
+                // lines) must not keep a dead "compacting" alive.
+                if (state == SessionState.Compacting && now - updated > CompactingTimeout)
+                    state = SessionState.Done;
 
                 int agents = LiveSubagents(id, stale, now);
 
