@@ -1,0 +1,49 @@
+name: Release
+
+# Push a tag like v0.2.0 to build, package and publish a GitHub release.
+# Installed copies pick it up automatically (they check every 6 hours).
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  VPK_VERSION: 1.2.161 # keep in step with the Velopack package in ClaudeBlink.csproj
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version from tag
+        id: version
+        shell: bash
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish
+        shell: bash
+        run: |
+          v=${{ steps.version.outputs.version }}
+          url=https://github.com/${{ github.repository }}
+          dotnet publish ClaudeBlink/ClaudeBlink.csproj -c Release -o publish -p:Version=$v -p:RepositoryUrl=$url
+          dotnet publish ClaudeBlink.Hook/ClaudeBlink.Hook.csproj -c Release -o publish -p:Version=$v -p:RepositoryUrl=$url
+
+      - name: Package and upload
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v=${{ steps.version.outputs.version }}
+          url=https://github.com/${{ github.repository }}
+          dotnet tool install -g vpk --version $VPK_VERSION
+          # Previous release lets vpk build a small delta update package.
+          vpk download github --repoUrl $url --token $GH_TOKEN
+          vpk pack -u ClaudeBlink -v $v -p publish -e ClaudeBlink.exe --packTitle "Claude Blink" --packAuthors BizStream --framework net10.0-x64-desktop
+          vpk upload github --repoUrl $url --token $GH_TOKEN --publish --releaseName "Claude Blink $v" --tag v$v

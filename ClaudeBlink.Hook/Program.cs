@@ -1,0 +1,1 @@
+return ClaudeBlink.HookHandler.Run();

@@ -1,0 +1,13 @@
+<Project>
+  <!-- Shared by both projects. CI overrides Version from the git tag (vX.Y.Z -> -p:Version=X.Y.Z). -->
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Product>Claude Blink</Product>
+    <Authors>BizStream</Authors>
+    <!-- Where the tray app looks for updates (CI also passes this in). -->
+    <RepositoryUrl>https://github.com/BizStream/claude-blink</RepositoryUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <AssemblyMetadata Include="RepositoryUrl" Value="$(RepositoryUrl)" />
+  </ItemGroup>
+</Project>
