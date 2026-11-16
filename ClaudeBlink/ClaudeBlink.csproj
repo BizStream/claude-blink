@@ -7,6 +7,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>ClaudeBlink</AssemblyName>
+    <!-- Exe, Start menu and taskbar icon. Regenerate with: dotnet run tools/make-icon.cs -->
+    <ApplicationIcon>app.ico</ApplicationIcon>
     <RootNamespace>ClaudeBlink</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>false</SelfContained>

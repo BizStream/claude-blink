@@ -221,7 +221,7 @@ sealed class TrayApp : ApplicationContext
             return;
         }
         Program.ApplyTheme();
-        _settings = new SettingsForm(_cfg, Preview, ApplySettings) { Icon = _tray.Icon };
+        _settings = new SettingsForm(_cfg, Preview, ApplySettings) { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath) ?? _tray.Icon };
         _settings.Show();
     }
 

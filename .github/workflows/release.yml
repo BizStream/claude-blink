@@ -45,5 +45,5 @@ jobs:
           dotnet tool install -g vpk --version $VPK_VERSION
           # Previous release lets vpk build a small delta update package.
           vpk download github --repoUrl $url --token $GH_TOKEN
-          vpk pack -u ClaudeBlink -v $v -p publish -e ClaudeBlink.exe --packTitle "Claude Blink" --packAuthors BizStream --framework net10.0-x64-desktop
+          vpk pack -u ClaudeBlink -v $v -p publish -e ClaudeBlink.exe --packTitle "Claude Blink" --packAuthors BizStream --icon ClaudeBlink/app.ico --framework net10.0-x64-desktop
           vpk upload github --repoUrl $url --token $GH_TOKEN --publish --releaseName "Claude Blink $v" --tag v$v
