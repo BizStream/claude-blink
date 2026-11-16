@@ -250,6 +250,15 @@ sealed class SwatchButton : ModernControl
         set { _color = value; Text = StateStyle.ToHex(value); Invalidate(); }
     }
 
+    bool _rainbow;
+
+    /// <summary>Shows a rainbow gradient instead of the color (for the Rainbow effect, which ignores color).</summary>
+    public bool Rainbow
+    {
+        get => _rainbow;
+        set { if (_rainbow == value) return; _rainbow = value; Invalidate(); }
+    }
+
     public override Size GetPreferredSize(Size proposedSize)
     {
         var t = TextRenderer.MeasureText("#WWWWWW", Font);
@@ -270,6 +279,25 @@ sealed class SwatchButton : ModernControl
         var r = new RectangleF(Px(1), Px(2), Width - Px(2) - 1, Height - Px(4) - 1);
         float radius = Px(4);
         using var path = Theme.RoundRect(r, radius);
+
+        if (_rainbow)
+        {
+            Color[] stops = [Color.Red, Color.Orange, Color.Yellow, Color.LimeGreen, Color.DeepSkyBlue, Color.MediumPurple];
+            using (var fill = new System.Drawing.Drawing2D.LinearGradientBrush(r, stops[0], stops[^1], 0f))
+            {
+                fill.InterpolationColors = new System.Drawing.Drawing2D.ColorBlend(stops.Length)
+                {
+                    Colors = stops,
+                    Positions = [0f, 0.2f, 0.4f, 0.6f, 0.8f, 1f],
+                };
+                g.FillPath(fill, path);
+            }
+            using (var pen = new Pen(Theme.ControlBorder, Px(1))) g.DrawPath(pen, path);
+            TextRenderer.DrawText(g, "Rainbow", Font, Rectangle.Round(r), Color.Black,
+                TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            DrawFocus(g, r, radius);
+            return;
+        }
 
         Color c = Enabled ? _color : Theme.Mix(_color, Theme.Card, 0.7);
         using (var fill = new SolidBrush(c)) g.FillPath(fill, path);

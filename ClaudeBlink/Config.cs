@@ -56,22 +56,22 @@ sealed class StateStyle
 sealed class Config
 {
     /// <summary>Main brightness (5-100 %), used by every status that doesn't set its own.</summary>
-    public int Brightness { get; set; } = 100;
+    public int Brightness { get; set; } = 20;
 
-    public StateStyle LongWait { get; set; } = new("#FF0000", LedEffect.BlinkFast);
-    public StateStyle NeedsInput { get; set; } = new("#FF6A00", LedEffect.Blink);
-    public StateStyle JustFinished { get; set; } = new("#0000FF", LedEffect.Blink);
-    public StateStyle Compacting { get; set; } = new("#B000FF", LedEffect.Pulse);
-    public StateStyle Subagents { get; set; } = new("#00C8FF", LedEffect.Pulse);
-    public StateStyle Running { get; set; } = new("#00FF00", LedEffect.Pulse);
+    public StateStyle LongWait { get; set; } = new("#FF0000", LedEffect.PulseSlow);
+    public StateStyle NeedsInput { get; set; } = new("#FF8000", LedEffect.Pulse) { Brightness = 40 };
+    public StateStyle JustFinished { get; set; } = new("#0000FF", LedEffect.Burst) { Brightness = 50 };
+    public StateStyle Compacting { get; set; } = new("#B000FF", LedEffect.Flicker);
+    public StateStyle Subagents { get; set; } = new("#00C8FF", LedEffect.Pulse) { Enabled = false };
+    public StateStyle Running { get; set; } = new("#C0C0C0", LedEffect.Pulse);
     public StateStyle Done { get; set; } = new("#0000FF", LedEffect.Solid);
-    public StateStyle Idle { get; set; } = new("#FFFFFF", LedEffect.Off);
+    public StateStyle Idle { get; set; } = new("#00FF00", LedEffect.Solid) { Brightness = 5 };
 
     /// <summary>Applied by the tray app itself (a registry write from inside a Claude session can be redirected).</summary>
     public bool StartWithWindows { get; set; } = true;
 
     /// <summary>Split mode: one LED shows the most urgent status, the other the next one.</summary>
-    public bool SplitLeds { get; set; }
+    public bool SplitLeds { get; set; } = true;
     /// <summary>Swap which physical LED gets the most urgent status in split mode.</summary>
     public bool SwapLeds { get; set; }
 
@@ -81,11 +81,11 @@ sealed class Config
     /// <summary>Needs input for this long becomes Long wait.</summary>
     public int LongWaitMinutes { get; set; } = 5;
     /// <summary>How long Just finished shows after a session completes.</summary>
-    public int JustFinishedSeconds { get; set; } = 10;
+    public int JustFinishedSeconds { get; set; } = 5;
     /// <summary>A running session (or subagent) with no activity for this long is treated as done (crashed/killed).</summary>
     public int StaleWorkingMinutes { get; set; } = 15;
     /// <summary>"Done" sessions are forgotten after this long with no activity.</summary>
-    public double DoneExpireHours { get; set; } = 12;
+    public double DoneExpireHours { get; set; } = 4;
 
     public StateStyle For(Status s) => s switch
     {

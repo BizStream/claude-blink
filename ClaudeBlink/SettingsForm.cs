@@ -42,7 +42,7 @@ sealed class SettingsForm : Form
 
     public SettingsForm(Config current, Action<Config?, Status?> preview, Action<Config> apply)
     {
-        _preview = preview;
+        _preview = Throttled(preview);
         _apply = apply;
         _work = current.Clone();
 
@@ -59,7 +59,7 @@ sealed class SettingsForm : Form
         AutoSizeMode = AutoSizeMode.GrowAndShrink;
         Padding = Padding.Empty;
 
-        var root = new TableLayoutPanel { ColumnCount = 1, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, Margin = Padding.Empty };
+        var root = new BufferedTable { ColumnCount = 1, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Fill, Margin = Padding.Empty };
         root.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
         root.Controls.Add(new Label { Text = "Claude Blink", Font = Theme.DisplayFont(18f), AutoSize = true, Margin = Pad(0, 0, 0, 0) });
@@ -90,7 +90,7 @@ sealed class SettingsForm : Form
         };
 
         LoadValues(_work);
-        FormClosed += (_, _) => _preview(null, null);
+        FormClosed += (_, _) => { _previewTimer?.Dispose(); preview(null, null); };
     }
 
     // ---- layout helpers ----
@@ -116,9 +116,38 @@ sealed class SettingsForm : Form
         return card;
     }
 
+    System.Windows.Forms.Timer? _previewTimer;
+
+    /// <summary>
+    /// Slider drags fire dozens of changes a second, and each preview is a synchronous USB write.
+    /// Coalesce them so the UI thread only sends the latest one every ~50 ms.
+    /// </summary>
+    Action<Config?, Status?> Throttled(Action<Config?, Status?> send)
+    {
+        Config? cfg = null; Status? status = null; bool pending = false;
+        _previewTimer = new System.Windows.Forms.Timer { Interval = 50 };
+        _previewTimer.Tick += (_, _) =>
+        {
+            _previewTimer!.Stop();
+            if (!pending) return;
+            pending = false;
+            send(cfg, status);
+        };
+        return (c, st) =>
+        {
+            cfg = c; status = st; pending = true;
+            if (!_previewTimer!.Enabled) _previewTimer.Start();
+        };
+    }
+
+    sealed class BufferedTable : TableLayoutPanel
+    {
+        public BufferedTable() { DoubleBuffered = true; }
+    }
+
     TableLayoutPanel Grid(int columns)
     {
-        var grid = new TableLayoutPanel { ColumnCount = columns, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty, BackColor = Theme.Card };
+        var grid = new BufferedTable { ColumnCount = columns, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty, BackColor = Theme.Card };
         for (int i = 0; i < columns; i++) grid.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         return grid;
     }
@@ -152,7 +181,13 @@ sealed class SettingsForm : Form
         AutoSize = false, Size = new Size(S(150), S(30)), Anchor = AnchorStyles.Left, TickStyle = TickStyle.None, Margin = Pad(0, 3, 0, 3),
     };
 
-    Label PercentLabel() => new() { AutoSize = true, MinimumSize = new Size(S(44), 0), Anchor = AnchorStyles.Left, Margin = Pad(4, 3, 16, 3) };
+    // Fixed size on purpose: an AutoSize label re-lays out every AutoSize parent up to the form on each Text change,
+    // which made dragging a brightness slider (9 labels per tick) slow and flickery.
+    Label PercentLabel() => new()
+    {
+        AutoSize = false, Size = new Size(S(44), TextRenderer.MeasureText("100%", Font).Height + S(4)),
+        TextAlign = ContentAlignment.MiddleLeft, Anchor = AnchorStyles.Left, Margin = Pad(4, 3, 16, 3),
+    };
 
     NumericUpDown Num(int min, int max, int step) =>
         new() { Minimum = min, Maximum = max, Increment = step, Width = S(76), Anchor = AnchorStyles.Left, TextAlign = HorizontalAlignment.Right, Margin = Pad(3, 6, 8, 6) };
@@ -420,6 +455,7 @@ sealed class SettingsForm : Form
         row.Effect.Enabled = on;
         row.PreviewButton.Enabled = on;
         row.Swatch.Enabled = on && Effects.UsesColor(effect);
+        row.Swatch.Rainbow = effect == LedEffect.Rainbow;
         row.Custom.Enabled = on && lit;
         row.Brightness.Enabled = on && lit && row.Custom.Checked;
         row.BrightnessLabel.ForeColor = on && lit && row.Custom.Checked ? Theme.Text : Theme.DisabledText;

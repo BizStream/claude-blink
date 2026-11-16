@@ -4,16 +4,16 @@ Shows Claude Code session state on a blink(1) mk2.
 
 | Status (default look) | Meaning |
 | --- | --- |
-| Long wait (fast-blinking red) | a session has needed input for over 5 minutes |
-| Needs input (blinking orange) | a session is waiting for you (permission prompt, question, plan approval) |
-| Just finished (blinking blue) | a session completed in the last 10 seconds |
-| Compacting (pulsing purple) | a session is compacting its context |
-| Subagents (pulsing cyan) | a session has subagents running, including background ones after the session stops |
-| Running (pulsing green) | a session is working |
+| Long wait (slow-pulsing red) | a session has needed input for over 5 minutes |
+| Needs input (pulsing orange) | a session is waiting for you (permission prompt, question, plan approval) |
+| Just finished (blue bursts) | a session completed in the last 5 seconds |
+| Compacting (flickering purple) | a session is compacting its context |
+| Subagents (pulsing cyan, off by default) | a session has subagents running, including background ones after the session stops |
+| Running (pulsing white) | a session is working |
 | Done (solid blue) | sessions are finished and nothing needs you |
-| Idle (off) | no sessions |
+| Idle (dim solid green) | no sessions |
 
-Statuses are listed from highest to lowest priority, and the light shows the highest one across all sessions. Long wait, Just finished, Compacting and Subagents can each be switched off in Settings. A switched-off status falls back to the one it's based on: Long wait to Needs input, Just finished to Done, and Compacting and Subagents to Running.
+Statuses are listed from highest to lowest priority, and the light shows the highest one across all sessions. By default the LEDs are split: one shows the most urgent status and the other the next one. Long wait, Just finished, Compacting and Subagents can each be switched off in Settings. A switched-off status falls back to the one it's based on: Long wait to Needs input, Just finished to Done, and Compacting and Subagents to Running.
 
 ## How it works
 
@@ -34,7 +34,7 @@ A tool call made inside a subagent keeps that subagent's marker alive. It doesn'
 
 `ClaudeBlink.exe status` prints each session's recorded state and the status it currently shows.
 
-Esc interrupts don't fire a hook, so the tray app spots them in the transcript. A running session (or subagent) with no activity for 15 minutes counts as done (for example, a killed terminal). `done` sessions drop off after 12 hours.
+Esc interrupts don't fire a hook, so the tray app spots them in the transcript. A running session (or subagent) with no activity for 15 minutes counts as done (for example, a killed terminal). `done` sessions drop off after 4 hours.
 
 ## Data folder
 
